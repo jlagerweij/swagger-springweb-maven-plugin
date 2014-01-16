@@ -1,10 +1,11 @@
 package com.moreapps;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.knappsack.swagger4springweb.parser.ApiParser;
-import com.knappsack.swagger4springweb.parser.ApiParserImpl;
+import com.knappsack.swagger4springweb.util.JavaToScalaUtil;
+import com.knappsack.swagger4springweb.util.ScalaObjectMapper;
 import com.wordnik.swagger.model.ApiInfo;
 import com.wordnik.swagger.model.ApiListing;
+import com.wordnik.swagger.model.ApiListingReference;
 import com.wordnik.swagger.model.ResourceListing;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -14,7 +15,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,23 +65,30 @@ public class SwaggerMojo extends AbstractMojo {
         baseControllerPackages.add("org.example.controllers");
         List<String> baseModelPackages = new ArrayList<String>();
         baseModelPackages.add("org.example.model");
-        String basePath = "/apidocs";
-        String servletPath = "";
+        String basePath = "/newapidocs";
+        String servletPath = "http://localhost/newapidocs";
         String apiVersion = "v1.0";
         List<String> ignorableAnnotations = new ArrayList<String>();
         boolean ignoreUnusedPathVariables = false;
 
-        ApiParser apiParser = new ApiParserImpl(apiInfo, baseControllerPackages, baseModelPackages, basePath,
+        ApiParser apiParser = new CustomApiParser(apiInfo, baseControllerPackages, baseModelPackages, basePath,
                 servletPath, apiVersion, ignorableAnnotations, ignoreUnusedPathVariables);
 
         Map<String,ApiListing> apiListings = apiParser.createApiListings();
 
         ResourceListing resourceList = apiParser.getResourceListing(apiListings);
 
-        ObjectMapper mapper = new ObjectMapper();
+        String target = "target/";
+        ScalaObjectMapper mapper = new ScalaObjectMapper();
         try {
-            mapper.writerWithDefaultPrettyPrinter().writeValue(new File("service1.json"), apiListings);
-            mapper.writerWithDefaultPrettyPrinter().writeValue(new File("service.json"), resourceList);
+            for (String apiLocation : apiListings.keySet()) {
+                if(!new File(target, apiLocation).getParentFile().mkdirs()) {
+                    System.out.println("Could not create directory " + apiLocation);
+                }
+                mapper.writerWithDefaultPrettyPrinter().writeValue(new File(target, apiLocation + ".json"), apiListings.get(apiLocation));
+            }
+//            mapper.writerWithDefaultPrettyPrinter().writeValue(new File("service1.json"), apiListings);
+            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(target, "service.json"), resourceList);
         } catch (IOException e) {
             e.printStackTrace();
         }
