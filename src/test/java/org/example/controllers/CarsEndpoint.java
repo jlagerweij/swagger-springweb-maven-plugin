@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import com.google.common.base.Optional;
+import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
 import com.wordnik.swagger.annotations.ApiResponse;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping(value = "/cars", produces = MediaType.APPLICATION_JSON_VALUE)
+@Api(value = "", description = "Cars accesss resoure.")
 public class CarsEndpoint {
 
     @ApiOperation(value = "Creates a Car")
@@ -31,11 +33,11 @@ public class CarsEndpoint {
     @ApiOperation(value = "Method to update a car")
     @RequestMapping(method = RequestMethod.PUT, value = "/{carId}")
     @ResponseBody
-    public Optional<Car> update(
+    public Car update(
             @ApiParam(required = true, value = "The id of the car that should be updated", name = "carId") @PathVariable("carId") String carId,
             @ApiParam(required = true, name = "car", value = "The car object that needs to be updated") @RequestBody Car car) {
 
-        return Optional.of(new Car(carId, car.getName(), car.getColor()));
+        return new Car(carId, car.getName(), car.getColor());
     }
 
     @ApiOperation(value = "Gets all Cars.")
@@ -56,7 +58,7 @@ public class CarsEndpoint {
     @ApiOperation(value = "Deletes a car based on their id")
     @RequestMapping(method = RequestMethod.DELETE, value = "/{carId}")
     @ResponseBody
-    public Optional<Car> delete(@ApiParam(name = "carId", value = "The id of the car to be deleted", required = true) @PathVariable("carId") String carId) {
-        return Optional.of(new Car(carId, null, null));
+    public Car delete(@ApiParam(name = "carId", value = "The id of the car to be deleted", required = true) @PathVariable("carId") String carId) {
+        return new Car(carId, null, null);
     }
 }

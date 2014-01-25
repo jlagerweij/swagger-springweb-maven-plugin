@@ -1,11 +1,16 @@
 package com.moreapps;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.knappsack.swagger4springweb.parser.ApiParser;
-import com.knappsack.swagger4springweb.util.JavaToScalaUtil;
 import com.knappsack.swagger4springweb.util.ScalaObjectMapper;
+import com.moreapps.swagger.Service;
+import com.moreapps.swagger.ServiceApi;
+import com.moreapps.swagger.ServiceApiDetail;
+import com.moreapps.swagger.ServiceInfo;
+import com.wordnik.swagger.core.SwaggerSpec;
 import com.wordnik.swagger.model.ApiInfo;
 import com.wordnik.swagger.model.ApiListing;
-import com.wordnik.swagger.model.ApiListingReference;
 import com.wordnik.swagger.model.ResourceListing;
 
 import org.apache.maven.plugin.AbstractMojo;
@@ -24,52 +29,81 @@ import java.util.Map;
  * Goal which touches a timestamp file.
  *
  */
-@Mojo(name = "touch", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
+@Mojo(name = "swagger-springweb-maven-plugin", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
 public class SwaggerMojo extends AbstractMojo {
-    /**
-     * Location of the file.
-     */
-    @Parameter(defaultValue = "${project.build.directory}", property = "outputDir", required = true)
+    private String title;
+    private String description;
+    private String termsOfServiceUrl;
+    private String contact;
+    private String license;
+    private String licenseUrl;
+
+    private String baseControllerPackage;
+    private String baseModelPackage;
+    private String basePath;
+    private String servletPath;
+    private String apiVersion;
+    private boolean ignoreUnusedPathVariables;
+
+    @Parameter(defaultValue = "${project.build.directory}", required = true)
     private File outputDirectory;
 
     public void execute() throws MojoExecutionException {
-        /*
-        File f = outputDirectory;
+        SpringMvcParser springMvcParser = new SpringMvcParser();
+        springMvcParser.setApiVersion(apiVersion);
+        springMvcParser.setBasePath(basePath);
 
-        if (!f.exists()) {
-            f.mkdirs();
-        }
+        Service service = springMvcParser.parse(baseControllerPackage);
 
-        File touch = new File(f, "touch.txt");
+        ServiceInfo info = new ServiceInfo();
+        info.setTitle(title);
+        info.setDescription(description);
+        info.setTermsOfServiceUrl(termsOfServiceUrl);
+        info.setContact(contact);
+        info.setLicense(license);
+        info.setLicenseUrl(licenseUrl);
+        service.setInfo(info);
 
-        FileWriter w = null;
         try {
-            w = new FileWriter(touch);
+            File baseOutput = new File("tt");
+            ObjectWriter objectWriter = new ObjectMapper().writerWithDefaultPrettyPrinter();
+            File serviceFile = new File(baseOutput, "service.json");
+            System.out.println("Writing to file " + serviceFile);
+            objectWriter.writeValue(serviceFile, service);
 
-            w.write("touch.txt");
-        } catch (IOException e) {
-            throw new MojoExecutionException("Error creating file " + touch, e);
-        } finally {
-            if (w != null) {
-                try {
-                    w.close();
-                } catch (IOException e) {
-                    // ignore
+            for (ServiceApi serviceApi : service.getApis()) {
+                ServiceApiDetail details = serviceApi.getDetails();
+
+                if (details.getResourcePath() == null) {
+                    throw new MojoExecutionException("ResourcePath of " + serviceApi.getPath() + " cannot be null");
                 }
-            }
-        }
-*/
+                File detailOutputFile = new File(baseOutput, details.getResourcePath() + ".json");
+                System.out.println("Writing to file " + detailOutputFile);
+                ensureDirectoryExists(detailOutputFile.getParentFile());
 
-        ApiInfo apiInfo = new ApiInfo("MoreApps API", "API for the More app.", "http://www.moreaps.nl", "developers@moreapps.nl", "Commercial", "http://www.moreapps.nl");
+                objectWriter.writeValue(detailOutputFile, details);
+            }
+        } catch (IOException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
+        }
+    }
+
+    private void ensureDirectoryExists(File directory) throws MojoExecutionException {
+        if (directory.mkdirs()) {
+            System.out.println("Created directory " + directory);
+        }
+        if (!directory.exists()) {
+            throw new MojoExecutionException("Could not output to directory for output: " + directory);
+        }
+    }
+
+    public void execute1() throws MojoExecutionException {
+        ApiInfo apiInfo = new ApiInfo(title, description, termsOfServiceUrl, contact, license, licenseUrl);
         List<String> baseControllerPackages = new ArrayList<String>();
-        baseControllerPackages.add("org.example.controllers");
+        baseControllerPackages.add(baseControllerPackage);
         List<String> baseModelPackages = new ArrayList<String>();
-        baseModelPackages.add("org.example.model");
-        String basePath = "/newapidocs";
-        String servletPath = "http://localhost/newapidocs";
-        String apiVersion = "v1.0";
+        baseModelPackages.add(baseModelPackage);
         List<String> ignorableAnnotations = new ArrayList<String>();
-        boolean ignoreUnusedPathVariables = false;
 
         ApiParser apiParser = new CustomApiParser(apiInfo, baseControllerPackages, baseModelPackages, basePath,
                 servletPath, apiVersion, ignorableAnnotations, ignoreUnusedPathVariables);
@@ -78,49 +112,73 @@ public class SwaggerMojo extends AbstractMojo {
 
         ResourceListing resourceList = apiParser.getResourceListing(apiListings);
 
-        String target = "target/";
         ScalaObjectMapper mapper = new ScalaObjectMapper();
         try {
             for (String apiLocation : apiListings.keySet()) {
-                if(!new File(target, apiLocation).getParentFile().mkdirs()) {
-                    System.out.println("Could not create directory " + apiLocation);
+                File apiLocationOutputFile = new File(outputDirectory, apiLocation + ".json");
+                if(apiLocationOutputFile.getParentFile().mkdirs()) {
+                    System.out.println("Created directory " + apiLocationOutputFile.getParentFile());
                 }
-                mapper.writerWithDefaultPrettyPrinter().writeValue(new File(target, apiLocation + ".json"), apiListings.get(apiLocation));
+                if (!apiLocationOutputFile.getParentFile().exists()) {
+                    throw new MojoExecutionException("Could not output to directory for output: " + apiLocationOutputFile.getParentFile());
+                }
+                mapper.writerWithDefaultPrettyPrinter().writeValue(apiLocationOutputFile, apiListings.get(apiLocation));
             }
-//            mapper.writerWithDefaultPrettyPrinter().writeValue(new File("service1.json"), apiListings);
-            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(target, "service.json"), resourceList);
+            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outputDirectory, "service.json"), resourceList);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-/*
-    private void writeInDirectory(File dir, Documentation doc) throws GenerateException {
-        String filename = resourcePathToFilename(doc.getResourcePath());
-        try {
-            File serviceFile = createFile(dir, filename);
-            mapper.writerWithDefaultPrettyPrinter().writeValue(serviceFile, doc);
-        } catch (IOException e) {
-            throw new GenerateException(e);
-        }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    protected File createFile(File dir, String outputResourcePath) throws IOException {
-        File serviceFile;
-        int i = outputResourcePath.lastIndexOf("/");
-        if (i != -1) {
-            String fileName = outputResourcePath.substring(i + 1);
-            String subDir = outputResourcePath.substring(0, i);
-            File finalDirectory = new File(dir, subDir);
-            finalDirectory.mkdirs();
-            serviceFile = new File(finalDirectory, fileName);
-        } else {
-            serviceFile = new File(dir, outputResourcePath);
-        }
-        while (!serviceFile.createNewFile()) {
-            serviceFile.delete();
-        }
-        LOG.info("Creating file " + serviceFile.getAbsolutePath());
-        return serviceFile;
+    public void setDescription(String description) {
+        this.description = description;
     }
-*/
+
+    public void setTermsOfServiceUrl(String termsOfServiceUrl) {
+        this.termsOfServiceUrl = termsOfServiceUrl;
+    }
+
+    public void setContact(String contact) {
+        this.contact = contact;
+    }
+
+    public void setLicense(String license) {
+        this.license = license;
+    }
+
+    public void setLicenseUrl(String licenseUrl) {
+        this.licenseUrl = licenseUrl;
+    }
+
+    public void setBaseControllerPackage(String baseControllerPackage) {
+        this.baseControllerPackage = baseControllerPackage;
+    }
+
+    public void setBaseModelPackage(String baseModelPackage) {
+        this.baseModelPackage = baseModelPackage;
+    }
+
+    public void setBasePath(String basePath) {
+        this.basePath = basePath;
+    }
+
+    public void setServletPath(String servletPath) {
+        this.servletPath = servletPath;
+    }
+
+    public void setApiVersion(String apiVersion) {
+        this.apiVersion = apiVersion;
+    }
+
+    public void setIgnoreUnusedPathVariables(boolean ignoreUnusedPathVariables) {
+        this.ignoreUnusedPathVariables = ignoreUnusedPathVariables;
+    }
+
+    public void setOutputDirectory(File outputDirectory) {
+        this.outputDirectory = outputDirectory;
+    }
 }

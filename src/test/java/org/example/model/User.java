@@ -1,14 +1,14 @@
 package org.example.model;
 
-public class Car extends Vehicle {
+public class User {
     private String id;
     private String name;
-    private String color;
+    private String emailAddress;
 
-    public Car(String id, String name, String color) {
+    public User(String id, String name, String emailAddress) {
         this.id = id;
         this.name = name;
-        this.color = color;
+        this.emailAddress = emailAddress;
     }
 
     public String getId() {
@@ -27,11 +27,11 @@ public class Car extends Vehicle {
         this.name = name;
     }
 
-    public String getColor() {
-        return color;
+    public String getEmailAddress() {
+        return emailAddress;
     }
 
-    public void setColor(String color) {
-        this.color = color;
+    public void setEmailAddress(String emailAddress) {
+        this.emailAddress = emailAddress;
     }
 }
