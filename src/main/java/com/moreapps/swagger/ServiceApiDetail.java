@@ -1,6 +1,7 @@
 package com.moreapps.swagger;
 
 import java.util.List;
+import java.util.Map;
 
 public class ServiceApiDetail {
     private String apiVersion;
@@ -12,6 +13,7 @@ public class ServiceApiDetail {
     private List<String> protocols;
     private List<String> authorizations;
     private List<ServiceOperations> apis;
+    private Map<String, ServiceModel> models;
     private String description;
     private int position;
 
@@ -101,5 +103,13 @@ public class ServiceApiDetail {
 
     public void setPosition(int position) {
         this.position = position;
+    }
+
+    public Map<String, ServiceModel> getModels() {
+        return models;
+    }
+
+    public void setModels(Map<String, ServiceModel> models) {
+        this.models = models;
     }
 }

@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
 import com.moreapps.swagger.Service;
 import com.moreapps.swagger.ServiceApi;
 import com.moreapps.swagger.ServiceApiDetail;
+import com.moreapps.swagger.ServiceModel;
+import com.moreapps.swagger.ServiceModelProperty;
 import com.moreapps.swagger.ServiceOperation;
 import com.moreapps.swagger.ServiceOperationParameter;
 import com.moreapps.swagger.ServiceOperations;
@@ -17,10 +19,15 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static java.lang.String.format;
@@ -61,6 +68,7 @@ public class SpringMvcParser {
             details.setConsumes(new ArrayList<String>());
             details.setProtocols(new ArrayList<String>());
             details.setAuthorizations(new ArrayList<String>());
+            details.setModels(new HashMap<String, ServiceModel>());
             serviceApi.setDetails(details);
 
             serviceApi.getDetails().setApiVersion(service.getApiVersion());
@@ -122,7 +130,7 @@ public class SpringMvcParser {
             }
             operation.setMethod(requestMapping.method()[0].name());
             if (Collection.class.isAssignableFrom(method.getReturnType())) {
-                operation.setResponseClass("List[" + method.getReturnType().getName() + "]");
+                operation.setResponseClass("List[" + method.getGenericReturnType().getClass().getName() + "]");
             } else {
                 operation.setResponseClass(method.getReturnType().getName());
             }
@@ -143,6 +151,7 @@ public class SpringMvcParser {
 
             System.out.println(format("%10s %s", operation.getMethod(), serviceOperations.getPath()));
 
+            addClassToModel(serviceApi, method.getReturnType(), method.getGenericReturnType());
 
             // Detect parameters
             operation.setParameters(new ArrayList<ServiceOperationParameter>());
@@ -153,10 +162,39 @@ public class SpringMvcParser {
                 parameter.setName(parameterNames[i]);
                 parameter.setDataType(parameterTypes[i].getName());
                 operation.getParameters().add(parameter);
+
+                addClassToModel(serviceApi, parameterTypes[i], null);
             }
 
             serviceOperations.getOperations().add(operation);
             serviceApi.getDetails().getApis().add(serviceOperations);
+        }
+    }
+
+    private void addClassToModel(ServiceApi serviceApi, Class<?> clazz, Type genericReturnType) {
+        if (genericReturnType instanceof ParameterizedType) {
+            clazz = (Class<?>) ((ParameterizedType) genericReturnType).getActualTypeArguments()[0];
+        }
+        if (String.class.isAssignableFrom(clazz)
+                || Collection.class.isAssignableFrom(clazz)) {
+            return;
+        }
+        if (!serviceApi.getDetails().getModels().containsKey(clazz.getName())) {
+            ServiceModel model = new ServiceModel();
+            model.setId(clazz.getName());
+            model.setName(clazz.getName());
+            model.setQualifiedType(clazz.getName());
+            HashMap<String, ServiceModelProperty> properties = new HashMap<String, ServiceModelProperty>();
+            Field[] fields = clazz.getDeclaredFields();
+            for (Field field : fields) {
+                ServiceModelProperty property = new ServiceModelProperty();
+                property.setQualifiedType(field.getType().getName());
+                property.setType(field.getType().getName());
+                properties.put(field.getName(), property);
+                addClassToModel(serviceApi, field.getType(), field.getGenericType());
+            }
+            model.setProperties(properties);
+            serviceApi.getDetails().getModels().put(clazz.getName(), model);
         }
     }
 
