@@ -5,6 +5,7 @@ import java.util.List;
 public class Service {
     private String apiVersion;
     private String swaggerVersion;
+    private String basePath;
     private List<ServiceApi> apis;
     private List<String> authorizations;
     private ServiceInfo info;
@@ -23,6 +24,14 @@ public class Service {
 
     public void setSwaggerVersion(String swaggerVersion) {
         this.swaggerVersion = swaggerVersion;
+    }
+
+    public String getBasePath() {
+        return basePath;
+    }
+
+    public void setBasePath(String basePath) {
+        this.basePath = basePath;
     }
 
     public List<ServiceApi> getApis() {

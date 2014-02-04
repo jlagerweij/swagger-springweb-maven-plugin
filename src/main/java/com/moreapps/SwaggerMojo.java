@@ -8,7 +8,6 @@ import com.moreapps.swagger.Service;
 import com.moreapps.swagger.ServiceApi;
 import com.moreapps.swagger.ServiceApiDetail;
 import com.moreapps.swagger.ServiceInfo;
-import com.wordnik.swagger.core.SwaggerSpec;
 import com.wordnik.swagger.model.ApiInfo;
 import com.wordnik.swagger.model.ApiListing;
 import com.wordnik.swagger.model.ResourceListing;
@@ -18,6 +17,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,23 +26,40 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Goal which touches a timestamp file.
- *
+ * @goal generate
+ * @phase compile
+ * @configurator include-project-dependencies
+ * @requiresDependencyResolution runtime
  */
-@Mojo(name = "swagger-springweb-maven-plugin", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
+@Mojo(name = "swagger-springweb",
+        defaultPhase = LifecyclePhase.GENERATE_RESOURCES,
+        requiresDependencyResolution = ResolutionScope.RUNTIME,
+        configurator = "include-project-dependencies")
 public class SwaggerMojo extends AbstractMojo {
+    @Parameter(required = true)
     private String title;
+    @Parameter(required = true)
     private String description;
+    @Parameter(required = true)
     private String termsOfServiceUrl;
+    @Parameter(required = true)
     private String contact;
+    @Parameter(required = true)
     private String license;
+    @Parameter(required = true)
     private String licenseUrl;
 
+    @Parameter(required = true)
     private String baseControllerPackage;
+    @Parameter(required = true)
     private String baseModelPackage;
+    @Parameter(required = true)
     private String basePath;
+    @Parameter(required = true)
     private String servletPath;
+    @Parameter(required = true)
     private String apiVersion;
+    @Parameter(required = true)
     private boolean ignoreUnusedPathVariables;
 
     @Parameter(defaultValue = "${project.build.directory}", required = true)
@@ -65,9 +82,10 @@ public class SwaggerMojo extends AbstractMojo {
         service.setInfo(info);
 
         try {
-            File baseOutput = new File("tt");
+            ensureDirectoryExists(outputDirectory);
+
             ObjectWriter objectWriter = new ObjectMapper().writerWithDefaultPrettyPrinter();
-            File serviceFile = new File(baseOutput, "service.json");
+            File serviceFile = new File(outputDirectory, "service.json");
             System.out.println("Writing to file " + serviceFile);
             objectWriter.writeValue(serviceFile, service);
 
@@ -77,7 +95,7 @@ public class SwaggerMojo extends AbstractMojo {
                 if (details.getResourcePath() == null) {
                     throw new MojoExecutionException("ResourcePath of " + serviceApi.getPath() + " cannot be null");
                 }
-                File detailOutputFile = new File(baseOutput, details.getResourcePath() + ".json");
+                File detailOutputFile = new File(outputDirectory, details.getResourcePath() + ".json");
                 System.out.println("Writing to file " + detailOutputFile);
                 ensureDirectoryExists(detailOutputFile.getParentFile());
 
@@ -94,39 +112,6 @@ public class SwaggerMojo extends AbstractMojo {
         }
         if (!directory.exists()) {
             throw new MojoExecutionException("Could not output to directory for output: " + directory);
-        }
-    }
-
-    public void execute1() throws MojoExecutionException {
-        ApiInfo apiInfo = new ApiInfo(title, description, termsOfServiceUrl, contact, license, licenseUrl);
-        List<String> baseControllerPackages = new ArrayList<String>();
-        baseControllerPackages.add(baseControllerPackage);
-        List<String> baseModelPackages = new ArrayList<String>();
-        baseModelPackages.add(baseModelPackage);
-        List<String> ignorableAnnotations = new ArrayList<String>();
-
-        ApiParser apiParser = new CustomApiParser(apiInfo, baseControllerPackages, baseModelPackages, basePath,
-                servletPath, apiVersion, ignorableAnnotations, ignoreUnusedPathVariables);
-
-        Map<String,ApiListing> apiListings = apiParser.createApiListings();
-
-        ResourceListing resourceList = apiParser.getResourceListing(apiListings);
-
-        ScalaObjectMapper mapper = new ScalaObjectMapper();
-        try {
-            for (String apiLocation : apiListings.keySet()) {
-                File apiLocationOutputFile = new File(outputDirectory, apiLocation + ".json");
-                if(apiLocationOutputFile.getParentFile().mkdirs()) {
-                    System.out.println("Created directory " + apiLocationOutputFile.getParentFile());
-                }
-                if (!apiLocationOutputFile.getParentFile().exists()) {
-                    throw new MojoExecutionException("Could not output to directory for output: " + apiLocationOutputFile.getParentFile());
-                }
-                mapper.writerWithDefaultPrettyPrinter().writeValue(apiLocationOutputFile, apiListings.get(apiLocation));
-            }
-            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outputDirectory, "service.json"), resourceList);
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 

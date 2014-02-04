@@ -6,7 +6,7 @@ public class ServiceModelProperty {
     private int position;
     private boolean required;
     private String description;
-    private String allowableValues;
+    private AllowableValues allowableValues;
     private String items;
 
     public String getType() {
@@ -49,11 +49,11 @@ public class ServiceModelProperty {
         this.description = description;
     }
 
-    public String getAllowableValues() {
+    public AllowableValues getAllowableValues() {
         return allowableValues;
     }
 
-    public void setAllowableValues(String allowableValues) {
+    public void setAllowableValues(AllowableValues allowableValues) {
         this.allowableValues = allowableValues;
     }
 

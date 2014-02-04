@@ -20,7 +20,7 @@ public class SwaggerMojoTest {
         swaggerMojo.setLicense("Commercial Cars License");
         swaggerMojo.setLicenseUrl("http://www.morecars.nl/cars-license.html");
 
-        swaggerMojo.setBaseControllerPackage("org.example.controllers");
+        swaggerMojo.setBaseControllerPackage("org.example");
         swaggerMojo.setBaseModelPackage("org.example.model");
         swaggerMojo.setBasePath("/newapidocs");
         swaggerMojo.setServletPath("http://localhost/newapidocs");
