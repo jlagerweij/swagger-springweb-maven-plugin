@@ -21,9 +21,7 @@ public class SwaggerMojoTest {
         swaggerMojo.setLicenseUrl("http://www.morecars.nl/cars-license.html");
 
         swaggerMojo.setBaseControllerPackage("org.example");
-        swaggerMojo.setBaseModelPackage("org.example.model");
         swaggerMojo.setBasePath("/newapidocs");
-        swaggerMojo.setServletPath("http://localhost/newapidocs");
         swaggerMojo.setApiVersion("v1.0");
 
         swaggerMojo.setOutputDirectory(new File("target"));

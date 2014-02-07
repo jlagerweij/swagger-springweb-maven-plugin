@@ -44,15 +44,9 @@ public class SwaggerMojo extends AbstractMojo {
     @Parameter(required = true)
     private String baseControllerPackage;
     @Parameter(required = true)
-    private String baseModelPackage;
-    @Parameter(required = true)
     private String basePath;
     @Parameter(required = true)
-    private String servletPath;
-    @Parameter(required = true)
     private String apiVersion;
-    @Parameter(required = true)
-    private boolean ignoreUnusedPathVariables;
 
     @Parameter(defaultValue = "${project.build.directory}", required = true)
     private File outputDirectory;
@@ -135,24 +129,12 @@ public class SwaggerMojo extends AbstractMojo {
         this.baseControllerPackage = baseControllerPackage;
     }
 
-    public void setBaseModelPackage(String baseModelPackage) {
-        this.baseModelPackage = baseModelPackage;
-    }
-
     public void setBasePath(String basePath) {
         this.basePath = basePath;
     }
 
-    public void setServletPath(String servletPath) {
-        this.servletPath = servletPath;
-    }
-
     public void setApiVersion(String apiVersion) {
         this.apiVersion = apiVersion;
-    }
-
-    public void setIgnoreUnusedPathVariables(boolean ignoreUnusedPathVariables) {
-        this.ignoreUnusedPathVariables = ignoreUnusedPathVariables;
     }
 
     public void setOutputDirectory(File outputDirectory) {
