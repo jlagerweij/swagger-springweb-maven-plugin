@@ -2,15 +2,10 @@ package com.moreapps;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.knappsack.swagger4springweb.parser.ApiParser;
-import com.knappsack.swagger4springweb.util.ScalaObjectMapper;
 import com.moreapps.swagger.Service;
 import com.moreapps.swagger.ServiceApi;
 import com.moreapps.swagger.ServiceApiDetail;
 import com.moreapps.swagger.ServiceInfo;
-import com.wordnik.swagger.model.ApiInfo;
-import com.wordnik.swagger.model.ApiListing;
-import com.wordnik.swagger.model.ResourceListing;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -21,9 +16,6 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @goal generate

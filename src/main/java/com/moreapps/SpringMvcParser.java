@@ -12,7 +12,6 @@ import com.moreapps.swagger.ServiceOperationParameter;
 import com.moreapps.swagger.ServiceOperations;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
-import com.wordnik.swagger.core.SwaggerSpec;
 
 import org.reflections.Reflections;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
@@ -47,6 +46,7 @@ import static com.moreapps.SwaggerUtils.isSwaggerPrimitive;
 import static java.lang.String.format;
 
 public class SpringMvcParser {
+    private static final String SWAGGER_SPEC_VERSION = "1.2";
 
     private String apiVersion;
     private String basePath;
@@ -61,7 +61,7 @@ public class SpringMvcParser {
 
         Service service = new Service();
         service.setApiVersion(apiVersion);
-        service.setSwaggerVersion(SwaggerSpec.version());
+        service.setSwaggerVersion(SWAGGER_SPEC_VERSION);
         service.setBasePath(basePath);
         service.setApis(new ArrayList<ServiceApi>());
 
