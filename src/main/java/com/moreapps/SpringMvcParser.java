@@ -247,10 +247,19 @@ public class SpringMvcParser {
                     property.setAllowableValues(allowableValues);
                     properties.put(field.getName(), property);
                 } else {
-                    String className = getClassFrom(serviceApi, field.getType(), field.getGenericType());
-                    property.setQualifiedType(getSwaggerTypeFor(field.getType()));
-                    property.setType(className);
-                    properties.put(field.getName(), property);
+                    if (Collection.class.isAssignableFrom(field.getType())) {
+                        Type[] actualTypeArguments = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
+                        property.setType("array");
+                        Map<String, String> items = new HashMap<String, String>();
+                        items.put("$ref", getSwaggerTypeFor(actualTypeArguments[0]));
+                        property.setItems(items);
+                        properties.put(field.getName(), property);
+                    } else {
+                        String className = getClassFrom(serviceApi, field.getType(), field.getGenericType());
+                        property.setQualifiedType(getSwaggerTypeFor(field.getType()));
+                        property.setType(className);
+                        properties.put(field.getName(), property);
+                    }
 
                     moreClassesToAdd.put(field.getType(), field.getGenericType());
                 }

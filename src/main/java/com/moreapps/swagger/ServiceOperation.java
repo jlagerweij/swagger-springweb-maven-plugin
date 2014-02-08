@@ -2,7 +2,7 @@ package com.moreapps.swagger;
 
 import java.util.List;
 
-public class ServiceOperation    {
+public class ServiceOperation {
     private String method;
     private String summary;
     private String notes;

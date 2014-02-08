@@ -1,5 +1,7 @@
 package com.moreapps.swagger;
 
+import java.util.Map;
+
 public class ServiceModelProperty {
     private String type;
     private String qualifiedType;
@@ -7,7 +9,7 @@ public class ServiceModelProperty {
     private boolean required;
     private String description;
     private AllowableValues allowableValues;
-    private String items;
+    private Map<String, String> items;
 
     public String getType() {
         return type;
@@ -57,11 +59,11 @@ public class ServiceModelProperty {
         this.allowableValues = allowableValues;
     }
 
-    public String getItems() {
+    public Map<String, String> getItems() {
         return items;
     }
 
-    public void setItems(String items) {
+    public void setItems(Map<String, String> items) {
         this.items = items;
     }
 }

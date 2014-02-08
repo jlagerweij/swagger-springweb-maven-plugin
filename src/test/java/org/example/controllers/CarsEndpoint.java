@@ -1,12 +1,12 @@
 package org.example.controllers;
 
-import com.google.common.base.Optional;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
 import com.wordnik.swagger.annotations.ApiResponse;
 
 import org.example.model.Car;
+import org.example.model.Wheel;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,7 +27,7 @@ public class CarsEndpoint {
     @RequestMapping(method = RequestMethod.POST)
     @ResponseBody
     public Car create(@ApiParam(required = true, name = "car", value = "The car object that needs to be created") @RequestBody Car car) {
-        return new Car(car.getId(), car.getName(), car.getColor());
+        return new Car(car.getId(), car.getName(), car.getColor(), car.getWheels());
     }
 
     @ApiOperation(value = "Method to update a car")
@@ -37,7 +37,7 @@ public class CarsEndpoint {
             @ApiParam(required = true, value = "The id of the car that should be updated", name = "carId") @PathVariable("carId") String carId,
             @ApiParam(required = true, name = "car", value = "The car object that needs to be updated") @RequestBody Car car) {
 
-        return new Car(carId, car.getName(), car.getColor());
+        return new Car(carId, car.getName(), car.getColor(), car.getWheels());
     }
 
     @ApiOperation(value = "Gets all Cars.")
@@ -52,13 +52,13 @@ public class CarsEndpoint {
     @RequestMapping(method = RequestMethod.GET, value = "/{carId}")
     @ResponseBody
     public Car view(@ApiParam(name = "carId", required = true, value = "The id of the car that needs to be retrieved") @PathVariable("carId") String carId) {
-        return new Car(carId, "name", "color");
+        return new Car(carId, "name", "color", new ArrayList<Wheel>());
     }
 
     @ApiOperation(value = "Deletes a car based on their id")
     @RequestMapping(method = RequestMethod.DELETE, value = "/{carId}")
     @ResponseBody
     public Car delete(@ApiParam(name = "carId", value = "The id of the car to be deleted", required = true) @PathVariable("carId") String carId) {
-        return new Car(carId, null, null);
+        return new Car(carId, null, null, new ArrayList<Wheel>());
     }
 }
