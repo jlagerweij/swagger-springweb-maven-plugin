@@ -49,7 +49,7 @@ public class SwaggerMojoTest {
         assertThat(service.getBasePath(), is("/newapidocs"));
 
         ServiceApiDetail serviceApiDetail = objectMapper.readValue(new File("target/cars.json"), ServiceApiDetail.class);
-        ServiceModelProperty wheels = serviceApiDetail.getModels().get("org.example.model.Car").getProperties().get("wheels");
+        ServiceModelProperty wheels = serviceApiDetail.getModels().get("Car").getProperties().get("wheels");
         assertThat(wheels.getType(), is("array"));
         assertThat(wheels.getItems().get("$ref"), is("org.example.model.Wheel"));
     }

@@ -69,9 +69,53 @@ public class SpringMvcParser {
 
         sortServicesAlphabetically(service);
 
+        simplifyModel(service);
+
         System.out.println(format("Found %d services.", service.getApis().size()));
 
         return service;
+    }
+
+    private void simplifyModel(Service service) {
+        System.out.println("Simplifing model.");
+        Map<String, String> simpliefiedModelNames = new HashMap<String, String>();
+        for (ServiceApi serviceApi : service.getApis()) {
+
+            Map<String, ServiceModel> newModels = new HashMap<String, ServiceModel>();
+            Map<String, ServiceModel> models = serviceApi.getDetails().getModels();
+            for (String key : models.keySet()) {
+                addToSimplifiedModel(simpliefiedModelNames, key);
+
+                ServiceModel serviceModel = models.get(key);
+                Map<String, ServiceModelProperty> newProperties = new HashMap<String, ServiceModelProperty>();
+                Map<String, ServiceModelProperty> properties = serviceModel.getProperties();
+                for (String propertyKey : properties.keySet()) {
+                    String type = properties.get(propertyKey).getType();
+                    addToSimplifiedModel(simpliefiedModelNames, type);
+
+                    properties.get(propertyKey).setType(simpliefiedModelNames.get(type));
+
+                    newProperties.put(propertyKey, properties.get(propertyKey));
+                }
+                serviceModel.setProperties(newProperties);
+
+                newModels.put(simpliefiedModelNames.get(key), serviceModel);
+            }
+
+            serviceApi.getDetails().setModels(newModels);
+        }
+    }
+
+    private void addToSimplifiedModel(Map<String, String> simpliefiedModelNames, String key) {
+        if (!simpliefiedModelNames.containsKey(key)) {
+            try {
+                Class<?> clazz = Class.forName(key);
+                System.out.println("  " + key + " ==> " + clazz.getSimpleName());
+                simpliefiedModelNames.put(key, clazz.getSimpleName());
+            } catch (ClassNotFoundException e) {
+                simpliefiedModelNames.put(key, key);
+            }
+        }
     }
 
     private void sortServicesAlphabetically(Service service) {
