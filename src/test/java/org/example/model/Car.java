@@ -1,14 +1,18 @@
 package org.example.model;
 
+import java.util.List;
+
 public class Car extends Vehicle {
     private String id;
     private String name;
     private String color;
+    private List<Wheel> wheels;
 
-    public Car(String id, String name, String color) {
+    public Car(String id, String name, String color, List<Wheel> wheels) {
         this.id = id;
         this.name = name;
         this.color = color;
+        this.wheels = wheels;
     }
 
     public String getId() {
@@ -33,5 +37,13 @@ public class Car extends Vehicle {
 
     public void setColor(String color) {
         this.color = color;
+    }
+
+    public List<Wheel> getWheels() {
+        return wheels;
+    }
+
+    public void setWheels(List<Wheel> wheels) {
+        this.wheels = wheels;
     }
 }

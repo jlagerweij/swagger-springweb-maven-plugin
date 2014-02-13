@@ -12,7 +12,6 @@ import com.moreapps.swagger.ServiceOperationParameter;
 import com.moreapps.swagger.ServiceOperations;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
-import com.wordnik.swagger.core.SwaggerSpec;
 
 import org.reflections.Reflections;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
@@ -47,6 +46,7 @@ import static com.moreapps.SwaggerUtils.isSwaggerPrimitive;
 import static java.lang.String.format;
 
 public class SpringMvcParser {
+    private static final String SWAGGER_SPEC_VERSION = "1.2";
 
     private String apiVersion;
     private String basePath;
@@ -61,7 +61,7 @@ public class SpringMvcParser {
 
         Service service = new Service();
         service.setApiVersion(apiVersion);
-        service.setSwaggerVersion(SwaggerSpec.version());
+        service.setSwaggerVersion(SWAGGER_SPEC_VERSION);
         service.setBasePath(basePath);
         service.setApis(new ArrayList<ServiceApi>());
 
@@ -69,9 +69,123 @@ public class SpringMvcParser {
 
         sortServicesAlphabetically(service);
 
+        simplifyModel(service);
+
         System.out.println(format("Found %d services.", service.getApis().size()));
 
         return service;
+    }
+
+    private Map<String, String> simplifyModel(Service service) {
+        System.out.println("Simplifing model.");
+        Map<String, String> simpliefiedModelNames = new HashMap<String, String>();
+        for (ServiceApi serviceApi : service.getApis()) {
+
+            Map<String, ServiceModel> newModels = new HashMap<String, ServiceModel>();
+            Map<String, ServiceModel> models = serviceApi.getDetails().getModels();
+            for (String key : models.keySet()) {
+                addToSimplifiedModel(simpliefiedModelNames, key);
+
+                ServiceModel serviceModel = models.get(key);
+                addToSimplifiedModel(simpliefiedModelNames, serviceModel.getId());
+                serviceModel.setId(simpliefiedModelNames.get(serviceModel.getId()));
+                addToSimplifiedModel(simpliefiedModelNames, serviceModel.getName());
+                serviceModel.setName(simpliefiedModelNames.get(serviceModel.getName()));
+                addToSimplifiedModel(simpliefiedModelNames, serviceModel.getQualifiedType());
+                serviceModel.setQualifiedType(simpliefiedModelNames.get(serviceModel.getQualifiedType()));
+
+                Map<String, ServiceModelProperty> properties = serviceModel.getProperties();
+                for (String propertyKey : properties.keySet()) {
+                    ServiceModelProperty serviceModelProperty = properties.get(propertyKey);
+
+                    addToSimplifiedModel(simpliefiedModelNames, serviceModelProperty.getType());
+                    serviceModelProperty.setType(simpliefiedModelNames.get(serviceModelProperty.getType()));
+                    addToSimplifiedModel(simpliefiedModelNames, serviceModelProperty.getQualifiedType());
+                    serviceModelProperty.setQualifiedType(simpliefiedModelNames.get(serviceModelProperty.getQualifiedType()));
+
+                    if (serviceModelProperty.getItems() != null) {
+                        Map<String, String> newItems = new HashMap<String, String>();
+                        for (String itemKey : serviceModelProperty.getItems().keySet()) {
+                            String itemValue = serviceModelProperty.getItems().get(itemKey);
+                            if (itemKey.equals("$ref")) {
+
+                                addToSimplifiedModel(simpliefiedModelNames, itemValue);
+                                newItems.put(itemKey, simpliefiedModelNames.get(itemValue));
+                            } else {
+                                newItems.put(itemKey, itemValue);
+                            }
+                        }
+                        serviceModelProperty.setItems(newItems);
+                    }
+                }
+
+                newModels.put(simpliefiedModelNames.get(key), serviceModel);
+            }
+            for (ServiceOperations serviceOperations : serviceApi.getDetails().getApis()) {
+                for (ServiceOperation serviceOperation : serviceOperations.getOperations()) {
+
+                    addToSimplifiedModel(simpliefiedModelNames, serviceOperation.getResponseClass());
+                    serviceOperation.setResponseClass(simpliefiedModelNames.get(serviceOperation.getResponseClass()));
+
+                    for (ServiceOperationParameter serviceOperationParameter : serviceOperation.getParameters()) {
+                        addToSimplifiedModel(simpliefiedModelNames, serviceOperationParameter.getDataType());
+                        serviceOperationParameter.setDataType(simpliefiedModelNames.get(serviceOperationParameter.getDataType()));
+                    }
+                }
+            }
+
+            serviceApi.getDetails().setModels(newModels);
+        }
+        return simpliefiedModelNames;
+    }
+
+    private void addToSimplifiedModel(Map<String, String> simpliefiedModelNames, String key) {
+        if (key == null) {
+            return;
+        }
+        if (!simpliefiedModelNames.containsKey(key)) {
+            try {
+                if (isListType(key)) {
+                    String className = key.substring("List[".length(), key.length() - 1);
+                    Class<?> clazz = Class.forName(className);
+                    String simplifiedName = "List[" + clazz.getSimpleName() + "] ";
+                    System.out.println("  " + key + " ==> " + simplifiedName);
+                    simpliefiedModelNames.put(key, simplifiedName);
+                } else if (isMapType(key)) {
+                    String[] classNames = key.substring("Map[".length(), key.length() - 1).split(",");
+                    String simplifiedClassname = "";
+                    for (String className : classNames) {
+                        try {
+                            if (!simplifiedClassname.isEmpty()) {
+                                simplifiedClassname += ",";
+                            }
+                            Class<?> clazz = Class.forName(className);
+                            simplifiedClassname += clazz.getSimpleName();
+                        } catch (ClassNotFoundException e) {
+                            simplifiedClassname += className;
+                        }
+                    }
+                    String simplifiedName = "Map[" + simplifiedClassname + "] ";
+                    System.out.println("  " + key + " ==> " + simplifiedName);
+                    simpliefiedModelNames.put(key, simplifiedName);
+                } else {
+                    Class<?> clazz = Class.forName(key);
+                    String simplifiedName = clazz.getSimpleName();
+                    System.out.println("  " + key + " ==> " + simplifiedName);
+                    simpliefiedModelNames.put(key, simplifiedName);
+                }
+            } catch (ClassNotFoundException e) {
+                simpliefiedModelNames.put(key, key);
+            }
+        }
+    }
+
+    private boolean isListType(String key) {
+        return key.startsWith("List[") && key.endsWith("]");
+    }
+
+    private boolean isMapType(String key) {
+        return key.startsWith("Map[") && key.endsWith("]");
     }
 
     private void sortServicesAlphabetically(Service service) {
@@ -247,10 +361,19 @@ public class SpringMvcParser {
                     property.setAllowableValues(allowableValues);
                     properties.put(field.getName(), property);
                 } else {
-                    String className = getClassFrom(serviceApi, field.getType(), field.getGenericType());
-                    property.setQualifiedType(getSwaggerTypeFor(field.getType()));
-                    property.setType(className);
-                    properties.put(field.getName(), property);
+                    if (Collection.class.isAssignableFrom(field.getType())) {
+                        Type[] actualTypeArguments = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
+                        property.setType("array");
+                        Map<String, String> items = new HashMap<String, String>();
+                        items.put("$ref", getSwaggerTypeFor(actualTypeArguments[0]));
+                        property.setItems(items);
+                        properties.put(field.getName(), property);
+                    } else {
+                        String className = getClassFrom(serviceApi, field.getType(), field.getGenericType());
+                        property.setQualifiedType(getSwaggerTypeFor(field.getType()));
+                        property.setType(className);
+                        properties.put(field.getName(), property);
+                    }
 
                     moreClassesToAdd.put(field.getType(), field.getGenericType());
                 }
@@ -273,9 +396,6 @@ public class SpringMvcParser {
             addClassToModel(serviceApi, actualTypeArguments[0]);
             return format("List[%s]", getSwaggerTypeFor(actualTypeArguments[0]));
         } else if (Map.class.isAssignableFrom((Class<?>) type)) {
-            if (!(genericReturnType instanceof ParameterizedType)) {
-                System.out.println();
-            }
             Type[] actualTypeArguments = ((ParameterizedType) genericReturnType).getActualTypeArguments();
             addClassToModel(serviceApi, actualTypeArguments[0]);
             addClassToModel(serviceApi, actualTypeArguments[1]);
