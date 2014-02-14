@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moreapps.swagger.Service;
 import com.moreapps.swagger.ServiceApiDetail;
 import com.moreapps.swagger.ServiceModelProperty;
+import com.moreapps.swagger.ServiceOperation;
+import com.moreapps.swagger.ServiceOperations;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.hamcrest.core.Is;
@@ -14,6 +16,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.core.Is.is;
@@ -49,12 +52,25 @@ public class SwaggerMojoTest {
         assertThat(service.getBasePath(), is("/newapidocs"));
 
         ServiceApiDetail serviceApiDetail = objectMapper.readValue(new File("target/cars.json"), ServiceApiDetail.class);
-        assertThat(serviceApiDetail.getApis().get(0).getOperations().get(0).getMethod(), is("DELETE"));
-        assertThat(serviceApiDetail.getApis().get(0).getOperations().get(0).getResponseClass(), is("Car"));
+
+        assertThat(hasApiWithPathMethodAndResponseClass(serviceApiDetail.getApis(), "/{carId}", "DELETE", "Car"), is(true));
 
         ServiceModelProperty wheels = serviceApiDetail.getModels().get("Car").getProperties().get("wheels");
         assertThat(wheels.getType(), is("array"));
         assertThat(wheels.getItems().get("$ref"), is("Wheel"));
+    }
+
+    private boolean hasApiWithPathMethodAndResponseClass(List<ServiceOperations> apis, String path, String method, String responseClass) {
+        for(ServiceOperations serviceOperations  : apis) {
+            if (serviceOperations.getPath().equals(path)) {
+                for(ServiceOperation operation : serviceOperations.getOperations()) {
+                    if (operation.getMethod().equals(method) && operation.getResponseClass().equals(responseClass)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
 }
