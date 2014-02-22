@@ -52,7 +52,7 @@ public class SwaggerMojo extends AbstractMojo {
     private File outputDirectory;
 
     public void execute() throws MojoExecutionException {
-        SpringMvcParser springMvcParser = new SpringMvcParser();
+        SpringMvcParser springMvcParser = new SpringMvcParser(getLog());
         springMvcParser.setApiVersion(apiVersion);
         springMvcParser.setBasePath(basePath);
 
@@ -72,7 +72,7 @@ public class SwaggerMojo extends AbstractMojo {
 
             ObjectWriter objectWriter = new ObjectMapper().writerWithDefaultPrettyPrinter();
             File serviceFile = new File(outputDirectory, "service.json");
-            System.out.println("Writing to file " + serviceFile);
+            getLog().info("Writing to file " + serviceFile);
             objectWriter.writeValue(serviceFile, service);
 
             for (ServiceApi serviceApi : service.getApis()) {
@@ -82,7 +82,7 @@ public class SwaggerMojo extends AbstractMojo {
                     throw new MojoExecutionException("ResourcePath of " + serviceApi.getPath() + " cannot be null");
                 }
                 File detailOutputFile = new File(outputDirectory, details.getResourcePath() + ".json");
-                System.out.println("Writing to file " + detailOutputFile);
+                getLog().info("Writing to file " + detailOutputFile);
                 ensureDirectoryExists(detailOutputFile.getParentFile());
 
                 objectWriter.writeValue(detailOutputFile, details);
@@ -94,7 +94,7 @@ public class SwaggerMojo extends AbstractMojo {
 
     private void ensureDirectoryExists(File directory) throws MojoExecutionException {
         if (directory.mkdirs()) {
-            System.out.println("Created directory " + directory);
+            getLog().info("Created directory " + directory);
         }
         if (!directory.exists()) {
             throw new MojoExecutionException("Could not output to directory for output: " + directory);

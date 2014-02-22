@@ -1,20 +1,16 @@
 package com.moreapps;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moreapps.swagger.Service;
 import com.moreapps.swagger.ServiceApiDetail;
 import com.moreapps.swagger.ServiceModelProperty;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.hamcrest.core.Is;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;

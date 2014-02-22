@@ -13,6 +13,7 @@ import com.moreapps.swagger.ServiceOperations;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 
+import org.apache.maven.plugin.logging.Log;
 import org.reflections.Reflections;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.http.ResponseEntity;
@@ -47,14 +48,23 @@ import static java.lang.String.format;
 
 public class SpringMvcParser {
     private static final String SWAGGER_SPEC_VERSION = "1.2";
+    private final Log log;
 
     private String apiVersion;
     private String basePath;
 
+    public SpringMvcParser(Log log) {
+        this.log = log;
+    }
+    
+    private Log getLog() {
+        return log;
+    }
+
     public Service parse(String... controllerPackages) {
         Set<Class<?>> controllerClasses = new HashSet<Class<?>>();
         for (String controllerPackage : controllerPackages) {
-            System.out.println("Controller packages: " + controllerPackage);
+            getLog().info("Controller packages: " + controllerPackage);
             Reflections reflections = new Reflections(controllerPackage);
             controllerClasses.addAll(reflections.getTypesAnnotatedWith(Controller.class));
         }
@@ -71,13 +81,13 @@ public class SpringMvcParser {
 
         simplifyModel(service);
 
-        System.out.println(format("Found %d services.", service.getApis().size()));
+        getLog().info(format("Found %d services.", service.getApis().size()));
 
         return service;
     }
 
     private Map<String, String> simplifyModel(Service service) {
-        System.out.println("Simplifing model.");
+        getLog().info("Simplifing model.");
         Map<String, String> simpliefiedModelNames = new HashMap<String, String>();
         for (ServiceApi serviceApi : service.getApis()) {
 
@@ -149,7 +159,7 @@ public class SpringMvcParser {
                     String className = key.substring("List[".length(), key.length() - 1);
                     Class<?> clazz = Class.forName(className);
                     String simplifiedName = "List[" + clazz.getSimpleName() + "] ";
-                    System.out.println("  " + key + " ==> " + simplifiedName);
+                    getLog().info("  " + key + " ==> " + simplifiedName);
                     simpliefiedModelNames.put(key, simplifiedName);
                 } else if (isMapType(key)) {
                     String[] classNames = key.substring("Map[".length(), key.length() - 1).split(",");
@@ -166,12 +176,12 @@ public class SpringMvcParser {
                         }
                     }
                     String simplifiedName = "Map[" + simplifiedClassname + "] ";
-                    System.out.println("  " + key + " ==> " + simplifiedName);
+                    getLog().info("  " + key + " ==> " + simplifiedName);
                     simpliefiedModelNames.put(key, simplifiedName);
                 } else {
                     Class<?> clazz = Class.forName(key);
                     String simplifiedName = clazz.getSimpleName();
-                    System.out.println("  " + key + " ==> " + simplifiedName);
+                    getLog().info("  " + key + " ==> " + simplifiedName);
                     simpliefiedModelNames.put(key, simplifiedName);
                 }
             } catch (ClassNotFoundException e) {
@@ -243,7 +253,7 @@ public class SpringMvcParser {
                 continue;
             }
 
-            System.out.println(serviceApi.getPath());
+            getLog().info(serviceApi.getPath());
 
             addMethodsAsOperations(controllerClass, serviceApi);
 
@@ -294,7 +304,7 @@ public class SpringMvcParser {
                 }
             }
 
-            System.out.println(format("%10s %s", operation.getMethod(), serviceOperations.getPath()));
+            getLog().info(format("%10s %s", operation.getMethod(), serviceOperations.getPath()));
 
             // Detect parameters
             operation.setParameters(new ArrayList<ServiceOperationParameter>());
@@ -338,7 +348,7 @@ public class SpringMvcParser {
             return;
         }
         if (!isSwaggerPrimitive(clazz) && !serviceApi.getDetails().getModels().containsKey(clazz.getName())) {
-            System.out.println(" Modelclass: " + clazz.getName());
+            getLog().info(" Modelclass: " + clazz.getName());
             ServiceModel model = new ServiceModel();
             model.setId(clazz.getName());
             model.setName(clazz.getName());

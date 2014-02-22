@@ -1,6 +1,5 @@
 package com.moreapps;
 
-
 import org.codehaus.classworlds.ClassRealm;
 import org.codehaus.plexus.component.configurator.AbstractComponentConfigurator;
 import org.codehaus.plexus.component.configurator.ComponentConfigurationException;
@@ -30,26 +29,27 @@ import java.util.List;
  */
 public class IncludeProjectDependenciesComponentConfigurator extends AbstractComponentConfigurator {
 
-
-    public void configureComponent( Object component, PlexusConfiguration configuration,
-                                    ExpressionEvaluator expressionEvaluator, ClassRealm containerRealm,
-                                    ConfigurationListener listener )
+    public void configureComponent(Object component, PlexusConfiguration configuration,
+                                   ExpressionEvaluator expressionEvaluator, ClassRealm containerRealm,
+                                   ConfigurationListener listener)
             throws ComponentConfigurationException {
 
         addProjectDependenciesToClassRealm(expressionEvaluator, containerRealm);
 
         ObjectWithFieldsConverter converter = new ObjectWithFieldsConverter();
 
-        converter.processConfiguration( converterLookup, component, containerRealm.getClassLoader(), configuration,
-                expressionEvaluator, listener );
+        converter.processConfiguration(converterLookup, component, containerRealm.getClassLoader(), configuration,
+                expressionEvaluator, listener);
 
     }
 
     private void addProjectDependenciesToClassRealm(ExpressionEvaluator expressionEvaluator, ClassRealm containerRealm) throws ComponentConfigurationException {
-        List<String> runtimeClasspathElements;
+        List<String> runtimeClasspathElements = new ArrayList<String>();
         try {
-            //noinspection unchecked
-            runtimeClasspathElements = (List<String>) expressionEvaluator.evaluate("${project.runtimeClasspathElements}");
+            List list = (List) expressionEvaluator.evaluate("${project.runtimeClasspathElements}");
+            for (Object o : list) {
+                runtimeClasspathElements.add((String) o);
+            }
         } catch (ExpressionEvaluationException e) {
             throw new ComponentConfigurationException("There was a problem evaluating: ${project.runtimeClasspathElements}", e);
         }
