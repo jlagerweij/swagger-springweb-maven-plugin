@@ -88,29 +88,24 @@ public class SpringMvcParser {
         return service;
     }
 
-    private Map<String, String> simplifyModel(Service service) {
+    private void simplifyModel(Service service) {
         getLog().info("Simplifing model.");
-        SimplifiedModel simplifiedModel = new SimplifiedModel(getLog());
+        ModelSimplifier modelSimplifier = new ModelSimplifier(getLog());
         for (ServiceApi serviceApi : service.getApis()) {
 
             Map<String, ServiceModel> newModels = new HashMap<String, ServiceModel>();
             Map<String, ServiceModel> models = serviceApi.getDetails().getModels();
             for (String key : models.keySet()) {
-                simplifiedModel.simplify(key);
 
                 ServiceModel serviceModel = models.get(key);
-                simplifiedModel.simplify(serviceModel.getId());
-                serviceModel.setId(simplifiedModel.get(serviceModel.getId()));
-                simplifiedModel.simplify(serviceModel.getName());
-                serviceModel.setName(simplifiedModel.get(serviceModel.getName()));
-                simplifiedModel.simplify(serviceModel.getQualifiedType());
-                serviceModel.setQualifiedType(simplifiedModel.get(serviceModel.getQualifiedType()));
+                serviceModel.setId(modelSimplifier.simplify(serviceModel.getId()));
+                serviceModel.setName(modelSimplifier.simplify(serviceModel.getName()));
+                serviceModel.setQualifiedType(modelSimplifier.simplify(serviceModel.getQualifiedType()));
 
                 if (serviceModel.getSubTypes() != null) {
                     List<String> newSubTypes = new ArrayList<String>();
                     for (String subType : serviceModel.getSubTypes()) {
-                        simplifiedModel.simplify(subType);
-                        newSubTypes.add(simplifiedModel.get(subType));
+                        newSubTypes.add(modelSimplifier.simplify(subType));
                     }
                     serviceModel.setSubTypes(newSubTypes);
                 }
@@ -119,10 +114,8 @@ public class SpringMvcParser {
                 for (String propertyKey : properties.keySet()) {
                     ServiceModelProperty serviceModelProperty = properties.get(propertyKey);
 
-                    simplifiedModel.simplify(serviceModelProperty.getType());
-                    serviceModelProperty.setType(simplifiedModel.get(serviceModelProperty.getType()));
-                    simplifiedModel.simplify(serviceModelProperty.getQualifiedType());
-                    serviceModelProperty.setQualifiedType(simplifiedModel.get(serviceModelProperty.getQualifiedType()));
+                    serviceModelProperty.setType(modelSimplifier.simplify(serviceModelProperty.getType()));
+                    serviceModelProperty.setQualifiedType(modelSimplifier.simplify(serviceModelProperty.getQualifiedType()));
 
                     if (serviceModelProperty.getItems() != null) {
                         Map<String, String> newItems = new HashMap<String, String>();
@@ -130,8 +123,7 @@ public class SpringMvcParser {
                             String itemValue = serviceModelProperty.getItems().get(itemKey);
                             if (itemKey.equals("$ref")) {
 
-                                simplifiedModel.simplify(itemValue);
-                                newItems.put(itemKey, simplifiedModel.get(itemValue));
+                                newItems.put(itemKey, modelSimplifier.simplify(itemValue));
                             } else {
                                 newItems.put(itemKey, itemValue);
                             }
@@ -140,24 +132,21 @@ public class SpringMvcParser {
                     }
                 }
 
-                newModels.put(simplifiedModel.get(key), serviceModel);
+                newModels.put(modelSimplifier.simplify(key), serviceModel);
             }
             for (ServiceOperations serviceOperations : serviceApi.getDetails().getApis()) {
                 for (ServiceOperation serviceOperation : serviceOperations.getOperations()) {
 
-                    simplifiedModel.simplify(serviceOperation.getResponseClass());
-                    serviceOperation.setResponseClass(simplifiedModel.get(serviceOperation.getResponseClass()));
+                    serviceOperation.setResponseClass(modelSimplifier.simplify(serviceOperation.getResponseClass()));
 
                     for (ServiceOperationParameter serviceOperationParameter : serviceOperation.getParameters()) {
-                        simplifiedModel.simplify(serviceOperationParameter.getDataType());
-                        serviceOperationParameter.setDataType(simplifiedModel.get(serviceOperationParameter.getDataType()));
+                        serviceOperationParameter.setDataType(modelSimplifier.simplify(serviceOperationParameter.getDataType()));
                     }
                 }
             }
 
             serviceApi.getDetails().setModels(newModels);
         }
-        return simplifiedModel;
     }
 
 
