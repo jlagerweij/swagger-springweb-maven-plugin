@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-@RequestMapping(value = "/users", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/v1?0/users", produces = MediaType.APPLICATION_JSON_VALUE)
 public class UsersEndpoint {
 
     @ApiOperation(value = "Creates a User")

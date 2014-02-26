@@ -185,7 +185,7 @@ public class SpringMvcParser {
             if (requestMapping != null) {
                 String[] value = requestMapping.value();
                 if (value.length > 0) {
-                    serviceApi.setPath(format("%s.{format}", asPath(value[0])));
+                    serviceApi.setPath(sanitizePath(format("%s.{format}", asPath(value[0]))));
                     serviceApi.getDetails().setResourcePath(asPath(value[0]));
                 }
                 details.getProduces().addAll(Lists.newArrayList(requestMapping.produces()));
@@ -195,7 +195,7 @@ public class SpringMvcParser {
             Api api = controllerClass.getAnnotation(Api.class);
             if (api != null) {
                 if (!StringUtils.isEmpty(api.value())) {
-                    serviceApi.setPath(format("%s.{format}", asPath(api.value())));
+                    serviceApi.setPath(sanitizePath(format("%s.{format}", asPath(api.value()))));
                     serviceApi.getDetails().setResourcePath(asPath(api.value()));
                 }
                 serviceApi.setDescription(api.description());
@@ -212,6 +212,10 @@ public class SpringMvcParser {
 
             service.getApis().add(serviceApi);
         }
+    }
+
+    private String sanitizePath(String path) {
+        return path.replace("?", ".");
     }
 
     private void addMethodsAsOperations(Class<?> controllerClass, ServiceApi serviceApi) {
