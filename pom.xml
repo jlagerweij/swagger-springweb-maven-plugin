@@ -4,7 +4,7 @@
 
     <groupId>com.moreapps</groupId>
     <artifactId>swagger-springweb-maven-plugin</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
     <packaging>maven-plugin</packaging>
 
     <name>swagger-springweb-maven-plugin Maven Plugin</name>
