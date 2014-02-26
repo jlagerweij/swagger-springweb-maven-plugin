@@ -1,7 +1,6 @@
 package com.moreapps;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moreapps.swagger.Service;
 import com.moreapps.swagger.ServiceApiDetail;
@@ -10,7 +9,6 @@ import com.moreapps.swagger.ServiceOperation;
 import com.moreapps.swagger.ServiceOperations;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.hamcrest.core.Is;
 import org.junit.Test;
 
 import java.io.File;
@@ -50,6 +48,10 @@ public class SwaggerMojoTest {
 
         Service service = objectMapper.readValue(new File("target/service.json"), Service.class);
         assertThat(service.getBasePath(), is("/newapidocs"));
+        assertThat(service.getApis().get(0).getPath(), is("/cars.{format}"));
+        assertThat(service.getApis().get(1).getPath(), is("/cars_{carId}_wheels.{format}"));
+        assertThat(service.getApis().get(2).getPath(), is("/v1_0_users.{format}"));
+        assertThat(service.getApis().get(3).getPath(), is("/vehicle.{format}"));
 
         ServiceApiDetail serviceApiDetail = objectMapper.readValue(new File("target/cars.json"), ServiceApiDetail.class);
 
@@ -58,6 +60,23 @@ public class SwaggerMojoTest {
         ServiceModelProperty wheels = serviceApiDetail.getModels().get("Car").getProperties().get("wheels");
         assertThat(wheels.getType(), is("array"));
         assertThat(wheels.getItems().get("$ref"), is("Wheel"));
+
+
+        ServiceApiDetail carsApiDetails = objectMapper.readValue(new File("target/cars.json"), ServiceApiDetail.class);
+        assertThat(carsApiDetails.getApis().get(0).getOperations().get(0).getMethod(), is("DELETE"));
+        assertThat(carsApiDetails.getApis().get(0).getOperations().get(0).getResponseClass(), is("Car"));
+
+        ServiceModelProperty wheels = carsApiDetails.getModels().get("Car").getProperties().get("wheels");
+        assertThat(wheels.getType(), is("array"));
+        assertThat(wheels.getItems().get("$ref"), is("Wheel"));
+
+        ServiceApiDetail vehicleApiDetails = objectMapper.readValue(new File("target/vehicle.json"), ServiceApiDetail.class);
+        assertThat(vehicleApiDetails.getModels().get("Vehicle").getDiscriminator(), is("type"));
+        assertThat(vehicleApiDetails.getModels().get("Vehicle").getSubTypes().get(0), is("Car"));
+        assertThat(vehicleApiDetails.getModels().get("Vehicle").getSubTypes().get(1), is("Bike"));
+
+        ServiceApiDetail users = objectMapper.readValue(new File("target/v1_0_users.json"), ServiceApiDetail.class);
+        assertThat(users.getApis().size(), is(5));
     }
 
     private boolean hasApiWithPathMethodAndResponseClass(List<ServiceOperations> apis, String path, String method, String responseClass) {
