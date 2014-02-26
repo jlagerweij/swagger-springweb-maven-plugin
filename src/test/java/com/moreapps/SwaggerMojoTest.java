@@ -45,7 +45,7 @@ public class SwaggerMojoTest {
         assertThat(service.getBasePath(), is("/newapidocs"));
         assertThat(service.getApis().get(0).getPath(), is("/cars.{format}"));
         assertThat(service.getApis().get(1).getPath(), is("/cars_{carId}_wheels.{format}"));
-        assertThat(service.getApis().get(2).getPath(), is("/v1.0_users.{format}"));
+        assertThat(service.getApis().get(2).getPath(), is("/v1_0_users.{format}"));
         assertThat(service.getApis().get(3).getPath(), is("/vehicle.{format}"));
 
         ServiceApiDetail carsApiDetails = objectMapper.readValue(new File("target/cars.json"), ServiceApiDetail.class);
@@ -60,6 +60,9 @@ public class SwaggerMojoTest {
         assertThat(vehicleApiDetails.getModels().get("Vehicle").getDiscriminator(), is("type"));
         assertThat(vehicleApiDetails.getModels().get("Vehicle").getSubTypes().get(0), is("Car"));
         assertThat(vehicleApiDetails.getModels().get("Vehicle").getSubTypes().get(1), is("Bike"));
+
+        ServiceApiDetail users = objectMapper.readValue(new File("target/v1_0_users.json"), ServiceApiDetail.class);
+        assertThat(users.getApis().size(), is(5));
     }
 
 }
